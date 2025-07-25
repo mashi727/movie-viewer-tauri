@@ -9,6 +9,10 @@ function App() {
   const [videoPath, setVideoPath] = useState('')
   const [chapters, setChapters] = useState([])
   const [selectedChapter, setSelectedChapter] = useState(null)
+  const [selectedRows, setSelectedRows] = useState([]) // 複数行選択用
+  const [lastSelectedRow, setLastSelectedRow] = useState(null) // Shift選択の基点
+  const [selectedCells, setSelectedCells] = useState([]) // 複数セル選択用 [{row: number, field: 'time'|'title'}]
+  const [editingCell, setEditingCell] = useState(null) // {row: number, field: 'time' | 'title'}
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [isDarkMode, setIsDarkMode] = useState(false)
@@ -158,6 +162,23 @@ function App() {
     } else if (selectedChapter > index) {
       setSelectedChapter(selectedChapter - 1)
     }
+    setSelectedRows([])
+    setSelectedCells([])
+  }
+
+  const deleteMultiple = () => {
+    // 複数行が選択されている場合
+    if (selectedRows.length > 0) {
+      const rowsToDelete = [...selectedRows].sort((a, b) => b - a) // 降順でソート
+      const newChapters = chapters.filter((_, i) => !selectedRows.includes(i))
+      setChapters(newChapters)
+      setSelectedRows([])
+      setSelectedChapter(null)
+    }
+    // 単一行が選択されている場合
+    else if (selectedChapter !== null) {
+      deleteChapter(selectedChapter)
+    }
   }
 
   const updateChapter = (index, field, value) => {
@@ -193,7 +214,7 @@ function App() {
       await writeText(time)
       console.log('Copied to clipboard:', time)
       
-      // 視覚的フィードバック（オプション）
+      // 視覚的フィードバック
       const button = document.querySelector('.chapter-controls button:nth-child(2)')
       if (button) {
         const originalText = button.textContent
@@ -204,7 +225,7 @@ function App() {
       }
     } catch (err) {
       console.error('Failed to copy:', err)
-      // フォールバック: 古いブラウザ用
+      // フォールバック
       try {
         const textArea = document.createElement('textarea')
         textArea.value = formatTimeDisplay(currentTime)
@@ -240,18 +261,158 @@ function App() {
     const minutes = Math.floor((totalSeconds % 3600) / 60)
     const seconds = totalSeconds % 60
     
-    // 秒の整数部分と小数部分を分離
     const secondsInt = Math.floor(seconds)
     const milliseconds = Math.round((seconds - secondsInt) * 1000)
     
-    // H:MM:SS.mmm 形式でフォーマット
     return `${hours}:${minutes.toString().padStart(2, '0')}:${secondsInt.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`
+  }
+
+  // セルクリックハンドラー
+  const handleCellClick = (e, rowIndex, field) => {
+    e.stopPropagation()
+    e.preventDefault() // テキスト選択を防止
+    
+    const isMac = platform === 'macos'
+    const isCtrlCmd = isMac ? e.metaKey : e.ctrlKey
+    
+    if (e.shiftKey && lastSelectedRow !== null) {
+      // Shiftクリック：範囲選択
+      const start = Math.min(lastSelectedRow, rowIndex)
+      const end = Math.max(lastSelectedRow, rowIndex)
+      const newSelectedRows = []
+      for (let i = start; i <= end; i++) {
+        newSelectedRows.push(i)
+      }
+      setSelectedRows(newSelectedRows)
+      setSelectedChapter(rowIndex)
+      // lastSelectedRowは変更しない（Shift選択の基点を保持）
+    } else if (isCtrlCmd) {
+      // Cmd/Ctrlクリック：個別選択の追加/削除
+      let newSelectedRows = [...selectedRows]
+      
+      if (newSelectedRows.includes(rowIndex)) {
+        // 既に選択されている場合は選択解除
+        newSelectedRows = newSelectedRows.filter(r => r !== rowIndex)
+        if (newSelectedRows.length === 0) {
+          setSelectedChapter(null)
+          setLastSelectedRow(null)
+        } else {
+          // 最後の選択行を新しい基点にする
+          setSelectedChapter(newSelectedRows[newSelectedRows.length - 1])
+          setLastSelectedRow(newSelectedRows[newSelectedRows.length - 1])
+        }
+      } else {
+        // 選択されていない場合は追加
+        newSelectedRows.push(rowIndex)
+        setSelectedChapter(rowIndex)
+        setLastSelectedRow(rowIndex)
+      }
+      
+      setSelectedRows(newSelectedRows)
+    } else {
+      // 通常クリック：単一選択
+      setSelectedChapter(rowIndex)
+      setSelectedRows([])
+      setLastSelectedRow(rowIndex)
+    }
+    setSelectedCells([])
+  }
+
+  // マウスダウンハンドラー（テキスト選択を防止）
+  const handleMouseDown = (e) => {
+    if (!editingCell) {
+      e.preventDefault()
+    }
+  }
+
+  // セルダブルクリックハンドラー
+  const handleCellDoubleClick = (e, rowIndex, field) => {
+    e.stopPropagation()
+    setEditingCell({ row: rowIndex, field })
+  }
+
+  // 編集終了ハンドラー
+  const handleEditEnd = () => {
+    setEditingCell(null)
+  }
+
+  // 入力フィールドのキーダウンハンドラー
+  const handleInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleEditEnd()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      handleEditEnd()
+    }
+    // Cmd+V/Ctrl+Vは通常の動作に任せる（handleKeyPressで処理しない）
   }
 
   // キーボードショートカット
   useEffect(() => {
     const handleKeyPress = (e) => {
       const ctrl = platform === 'macos' ? e.metaKey : e.ctrlKey
+      
+      // 編集中の場合はCmd+V/Ctrl+Vを通常のペースト動作に任せる
+      if (editingCell && ctrl && e.key === 'v') {
+        return // デフォルトの動作を許可
+      }
+      
+      // 上下カーソルキーでの行移動
+      if (!editingCell && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        e.preventDefault()
+        
+        if (e.shiftKey && selectedChapter !== null) {
+          // Shift+上下で範囲選択
+          let newSelectedRows = [...selectedRows]
+          
+          if (e.key === 'ArrowUp' && selectedChapter > 0) {
+            const newPos = selectedChapter - 1
+            const start = Math.min(lastSelectedRow ?? selectedChapter, newPos)
+            const end = Math.max(lastSelectedRow ?? selectedChapter, newPos)
+            newSelectedRows = []
+            for (let i = start; i <= end; i++) {
+              newSelectedRows.push(i)
+            }
+            setSelectedChapter(newPos)
+            setSelectedRows(newSelectedRows)
+          } else if (e.key === 'ArrowDown' && selectedChapter < chapters.length - 1) {
+            const newPos = selectedChapter + 1
+            const start = Math.min(lastSelectedRow ?? selectedChapter, newPos)
+            const end = Math.max(lastSelectedRow ?? selectedChapter, newPos)
+            newSelectedRows = []
+            for (let i = start; i <= end; i++) {
+              newSelectedRows.push(i)
+            }
+            setSelectedChapter(newPos)
+            setSelectedRows(newSelectedRows)
+          }
+          setSelectedCells([])
+        } else {
+          // 通常の上下移動
+          if (selectedChapter !== null) {
+            if (e.key === 'ArrowUp' && selectedChapter > 0) {
+              const newPos = selectedChapter - 1
+              setSelectedChapter(newPos)
+              setLastSelectedRow(newPos)
+              setSelectedRows([])
+              setSelectedCells([])
+            } else if (e.key === 'ArrowDown' && selectedChapter < chapters.length - 1) {
+              const newPos = selectedChapter + 1
+              setSelectedChapter(newPos)
+              setLastSelectedRow(newPos)
+              setSelectedRows([])
+              setSelectedCells([])
+            }
+          } else if (chapters.length > 0) {
+            // 何も選択されていない場合は最初の行を選択
+            setSelectedChapter(0)
+            setLastSelectedRow(0)
+            setSelectedRows([])
+            setSelectedCells([])
+          }
+        }
+      }
       
       if (ctrl) {
         switch (e.key) {
@@ -281,7 +442,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [platform, selectedChapter, chapters])
+  }, [platform, selectedChapter, selectedRows, lastSelectedRow, chapters, editingCell])
 
   return (
     <div className={`app ${isDarkMode ? 'dark' : 'light'}`}>
@@ -335,41 +496,60 @@ function App() {
                 <tr>
                   <th>Time</th>
                   <th>Chapter</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {chapters.map((chapter, index) => (
                   <tr 
                     key={index}
-                    className={selectedChapter === index ? 'selected' : ''}
-                    onClick={() => setSelectedChapter(index)}
+                    className={
+                      selectedRows.includes(index) ? 'selected multi-selected' : 
+                      selectedChapter === index ? 'selected' : ''
+                    }
+                    onClick={() => {
+                      setSelectedChapter(index)
+                      setLastSelectedRow(index)
+                      setSelectedRows([])
+                      setSelectedCells([])
+                    }}
                   >
-                    <td>
-                      <input
-                        type="text"
-                        value={chapter.time}
-                        onChange={(e) => updateChapter(index, 'time', e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
+                    <td 
+                      onClick={(e) => handleCellClick(e, index, 'time')}
+                      onDoubleClick={(e) => handleCellDoubleClick(e, index, 'time')}
+                      onMouseDown={handleMouseDown}
+                    >
+                      {editingCell?.row === index && editingCell?.field === 'time' ? (
+                        <input
+                          type="text"
+                          value={chapter.time}
+                          onChange={(e) => updateChapter(index, 'time', e.target.value)}
+                          onBlur={handleEditEnd}
+                          onKeyDown={handleInputKeyDown}
+                          onClick={(e) => e.stopPropagation()}
+                          autoFocus
+                        />
+                      ) : (
+                        <div className="cell-content">{chapter.time}</div>
+                      )}
                     </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={chapter.title}
-                        onChange={(e) => updateChapter(index, 'title', e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </td>
-                    <td>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          deleteChapter(index)
-                        }}
-                      >
-                        Del
-                      </button>
+                    <td 
+                      onClick={(e) => handleCellClick(e, index, 'title')}
+                      onDoubleClick={(e) => handleCellDoubleClick(e, index, 'title')}
+                      onMouseDown={handleMouseDown}
+                    >
+                      {editingCell?.row === index && editingCell?.field === 'title' ? (
+                        <input
+                          type="text"
+                          value={chapter.title}
+                          onChange={(e) => updateChapter(index, 'title', e.target.value)}
+                          onBlur={handleEditEnd}
+                          onKeyDown={handleInputKeyDown}
+                          onClick={(e) => e.stopPropagation()}
+                          autoFocus
+                        />
+                      ) : (
+                        <div className="cell-content">{chapter.title}</div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -381,7 +561,7 @@ function App() {
             <button onClick={addChapter}>Row add</button>
             <button onClick={copyCurrentTime}>COPY</button>
             <button onClick={sortChapters}>SORT</button>
-            <button onClick={() => selectedChapter !== null && deleteChapter(selectedChapter)}>
+            <button onClick={deleteMultiple}>
               Row del
             </button>
             <button onClick={jumpToTime}>Jump</button>
