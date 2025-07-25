@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { invoke } from '@tauri-apps/api/tauri'
-import { open } from '@tauri-apps/api/dialog'
+import { open, save } from '@tauri-apps/api/dialog'
 import { readText, writeText } from '@tauri-apps/api/clipboard'
 import { convertFileSrc } from '@tauri-apps/api/tauri'
 import './App.css'
@@ -17,6 +17,7 @@ function App() {
   const [duration, setDuration] = useState(0)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [platform, setPlatform] = useState('')
+  const [activeMenu, setActiveMenu] = useState(null)
   
   const videoRef = useRef(null)
   const animationFrameRef = useRef(null)
@@ -88,7 +89,7 @@ function App() {
         multiple: false,
         filters: [{
           name: 'Video',
-          extensions: ['mp4', 'm4v', 'avi', 'mkv', 'mov', 'MOV', 'ts', 'm2ts', 'mp3', 'webm']
+          extensions: ['mp4', 'm4v', 'avi', 'mkk', 'mov', 'MOV', 'ts', 'm2ts', 'mp3', 'webm']
         }]
       })
       
@@ -99,6 +100,7 @@ function App() {
     } catch (error) {
       console.error('Error opening video:', error)
     }
+    setActiveMenu(null)
   }
 
   const loadChapters = async () => {
@@ -118,6 +120,7 @@ function App() {
     } catch (error) {
       console.error('Error loading chapters:', error)
     }
+    setActiveMenu(null)
   }
 
   const saveChapters = async () => {
@@ -138,6 +141,25 @@ function App() {
     } catch (error) {
       console.error('Error saving chapters:', error)
     }
+    setActiveMenu(null)
+  }
+
+  const quitApp = () => {
+    window.close()
+  }
+
+  const rewind1Min = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 60)
+    }
+    setActiveMenu(null)
+  }
+
+  const forward1Min = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.min(videoRef.current.duration, videoRef.current.currentTime + 60)
+    }
+    setActiveMenu(null)
   }
 
   const addChapter = () => {
@@ -206,6 +228,7 @@ function App() {
         videoRef.current.currentTime = ms / 1000
       }
     }
+    setActiveMenu(null)
   }
 
   const copyCurrentTime = async () => {
@@ -415,7 +438,7 @@ function App() {
       }
       
       if (ctrl) {
-        switch (e.key) {
+        switch (e.key.toLowerCase()) {
           case 'o':
             e.preventDefault()
             openVideo()
@@ -436,6 +459,14 @@ function App() {
             e.preventDefault()
             pasteChapters()
             break
+          case 'arrowleft':
+            e.preventDefault()
+            rewind1Min()
+            break
+          case 'arrowright':
+            e.preventDefault()
+            forward1Min()
+            break
         }
       }
     }
@@ -444,12 +475,81 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [platform, selectedChapter, selectedRows, lastSelectedRow, chapters, editingCell])
 
+  // メニューを閉じるためのクリックハンドラー
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.menu-item') && !e.target.closest('.menu-bar button')) {
+        setActiveMenu(null)
+      }
+    }
+
+    if (activeMenu) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [activeMenu])
+
+  const getShortcutLabel = (key) => {
+    const modifier = platform === 'macos' ? '⌘' : 'Ctrl+'
+    return modifier + key
+  }
+
   return (
     <div className={`app ${isDarkMode ? 'dark' : 'light'}`}>
       <div className="header">
         <div className="menu-bar">
-          <button onClick={openVideo}>File</button>
-          <button onClick={() => {}}>Skip</button>
+          <div className="menu-item">
+            <button 
+              onClick={() => setActiveMenu(activeMenu === 'file' ? null : 'file')}
+              className={activeMenu === 'file' ? 'active' : ''}
+            >
+              File
+            </button>
+            {activeMenu === 'file' && (
+              <div className="dropdown-menu">
+                <div className="menu-option" onClick={openVideo}>
+                  <span>Open</span>
+                  <span className="shortcut">{getShortcutLabel('O')}</span>
+                </div>
+                <div className="menu-option" onClick={loadChapters}>
+                  <span>Load</span>
+                  <span className="shortcut">{getShortcutLabel('L')}</span>
+                </div>
+                <div className="menu-option" onClick={saveChapters}>
+                  <span>Save</span>
+                  <span className="shortcut">{getShortcutLabel('S')}</span>
+                </div>
+                <div className="menu-divider"></div>
+                <div className="menu-option" onClick={quitApp}>
+                  <span>Quit</span>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="menu-item">
+            <button 
+              onClick={() => setActiveMenu(activeMenu === 'skip' ? null : 'skip')}
+              className={activeMenu === 'skip' ? 'active' : ''}
+            >
+              Skip
+            </button>
+            {activeMenu === 'skip' && (
+              <div className="dropdown-menu">
+                <div className="menu-option" onClick={rewind1Min}>
+                  <span>1min BW</span>
+                  <span className="shortcut">{getShortcutLabel('←')}</span>
+                </div>
+                <div className="menu-option" onClick={forward1Min}>
+                  <span>1min FW</span>
+                  <span className="shortcut">{getShortcutLabel('→')}</span>
+                </div>
+                <div className="menu-option" onClick={jumpToTime}>
+                  <span>Jump</span>
+                  <span className="shortcut">{getShortcutLabel('J')}</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         <div className="title">{videoPath ? videoPath.split('/').pop().split('\\').pop() : ''}</div>
       </div>
