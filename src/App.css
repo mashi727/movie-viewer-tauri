@@ -35,42 +35,191 @@ body {
 
 /* ヘッダー */
 .header {
-  background-color: #f0f0f0;
-  border-bottom: 1px solid #ccc;
+  background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
+  border-bottom: 1px solid #c0c0c0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .app.dark .header {
-  background-color: #353535;
-  border-bottom-color: #555;
+  background: linear-gradient(to bottom, #3a3a3a, #2a2a2a);
+  border-bottom-color: #505050;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
+/* メニューバー */
 .menu-bar {
   display: flex;
-  height: 36px;
+  height: 28px;
   align-items: center;
+  padding: 0 8px;
+  background: transparent;
+  position: relative;
+  z-index: 1000;
 }
 
-.menu-bar button {
-  padding: 0 18px;
-  height: 100%;
-  background: none;
+.menu-item {
+  position: relative;
+  display: inline-block;
+}
+
+.menu-button {
+  padding: 4px 12px;
+  height: 24px;
+  background: transparent;
   border: none;
   cursor: pointer;
   font-size: 18px;
+  font-weight: 400;
   color: inherit;
+  border-radius: 4px;
+  margin: 0 1px;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
 }
 
-.menu-bar button:hover {
-  background-color: rgba(0,0,0,0.1);
+.menu-button:hover,
+.menu-button.active {
+  background-color: rgba(0, 0, 0, 0.08);
+  color: #000;
 }
 
-.app.dark .menu-bar button:hover {
-  background-color: rgba(255,255,255,0.1);
+.app.dark .menu-button:hover,
+.app.dark .menu-button.active {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #fff;
 }
 
+.menu-button:active {
+  background-color: rgba(0, 0, 0, 0.15);
+  transform: scale(0.98);
+}
+
+.app.dark .menu-button:active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* メニューボタンのフォーカス状態 */
+.menu-button:focus {
+  outline: 2px solid #007AFF;
+  outline-offset: 1px;
+}
+
+.app.dark .menu-button:focus {
+  outline-color: #0A84FF;
+}
+
+/* ドロップダウンメニュー */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 220px;
+  background: white;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 4px 0;
+  z-index: 1001;
+  animation: menuFadeIn 0.15s ease-out;
+}
+
+.app.dark .dropdown-menu {
+  background: #2a2a2a;
+  border-color: #505050;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes menuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menu-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 18px;
+  color: #333;
+  transition: background-color 0.1s ease;
+}
+
+.app.dark .menu-option {
+  color: #e0e0e0;
+}
+
+.menu-option:hover {
+  background-color: #007AFF;
+  color: white;
+}
+
+.app.dark .menu-option:hover {
+  background-color: #0A84FF;
+  color: white;
+}
+
+.menu-option.disabled {
+  color: #999;
+  cursor: default;
+  pointer-events: none;
+}
+
+.app.dark .menu-option.disabled {
+  color: #666;
+}
+
+.menu-option .shortcut {
+  font-size: 16px;
+  color: #666;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  margin-left: 24px;
+}
+
+.app.dark .menu-option .shortcut {
+  color: #999;
+}
+
+.menu-option:hover .shortcut {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.menu-separator {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 4px 0;
+}
+
+.app.dark .menu-separator {
+  background-color: #404040;
+}
+
+/* タイトル部分 */
 .title {
-  padding: 10px;
-  font-size: 20px;
+  padding: 8px 16px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+  background-color: #f5f5f5;
+  border-top: 1px solid #d0d0d0;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.app.dark .title {
+  color: #e0e0e0;
+  background-color: #2a2a2a;
+  border-top-color: #404040;
 }
 
 /* メインコンテンツ */
@@ -78,6 +227,8 @@ body {
   flex: 1;
   display: flex;
   overflow: hidden;
+  height: 100%; /* 親の高さを継承 */
+  min-height: 0; /* flexboxでの適切な動作を保証 */
 }
 
 /* ビデオセクション */
@@ -86,6 +237,118 @@ body {
   display: flex;
   flex-direction: column;
   padding: 10px;
+  height: 100%; /* 親の高さを継承 */
+  min-height: 0; /* flexboxでの適切な動作を保証 */
+}
+
+/* 動画時間表示領域 */
+.video-time-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: transparent;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-size: 18px;
+  color: #555;
+  height: 40px;
+  margin: 0 10px;
+}
+
+.app.dark .video-time-display {
+  background: transparent;
+  color: #ccc;
+}
+
+/* 時間制御ボタン */
+.video-time-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.video-time-controls button {
+  height: 28px;
+  min-width: 70px;
+  border-radius: 6px;
+  border: 1px solid #d0d0d0;
+  background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* 再生/一時停止ボタンのスタイル */
+.video-time-controls .play-pause-button {
+  min-width: 40px;
+  font-size: 16px;
+  background: linear-gradient(to bottom, #5AC8FA, #007AFF);
+  color: white;
+  border-color: #007AFF;
+}
+
+.app.dark .video-time-controls .play-pause-button {
+  background: linear-gradient(to bottom, #64D2FF, #0A84FF);
+  border-color: #0A84FF;
+}
+
+.video-time-controls .play-pause-button:hover {
+  background: linear-gradient(to bottom, #007AFF, #0051D5);
+}
+
+.app.dark .video-time-controls .play-pause-button:hover {
+  background: linear-gradient(to bottom, #0A84FF, #0066CC);
+}
+
+/* 1フレームボタンのスタイル */
+.video-time-controls .frame-button {
+  min-width: 50px;
+  font-size: 16px;
+  background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+  color: #666;
+  border-color: #c0c0c0;
+}
+
+.app.dark .video-time-controls .frame-button {
+  background: linear-gradient(to bottom, #3a3a3a, #2a2a2a);
+  color: #ccc;
+  border-color: #404040;
+}
+
+.video-time-controls .frame-button:hover {
+  background: linear-gradient(to bottom, #e0e0e0, #d0d0d0);
+  border-color: #a0a0a0;
+}
+
+.app.dark .video-time-controls .frame-button:hover {
+  background: linear-gradient(to bottom, #4a4a4a, #3a3a3a);
+  border-color: #505050;
+}
+
+.app.dark .video-time-controls button {
+  background: linear-gradient(to bottom, #4a4a4a, #3a3a3a);
+  color: #e0e0e0;
+  border-color: #505050;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.video-time-controls button:hover {
+  background: linear-gradient(to bottom, #e8e8e8, #d8d8d8);
+  border-color: #a0a0a0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+.app.dark .video-time-controls button:hover {
+  background: linear-gradient(to bottom, #5a5a5a, #4a4a4a);
+  border-color: #606060;
+}
+
+.video-time-controls button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .video-wrapper {
@@ -94,6 +357,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .video-element {
@@ -139,6 +404,11 @@ video {
 .video-placeholder {
   color: #666;
   font-size: 20px;
+  text-align: center;
+}
+
+.app.dark .video-placeholder {
+  color: #999;
 }
 
 /* チャプターセクション */
@@ -147,62 +417,84 @@ video {
   display: flex;
   flex-direction: column;
   padding: 10px;
-  border-left: 1px solid #ccc;
-  background-color: #f5f5f5;
+  border-left: 1px solid #d0d0d0;
+  background-color: #f8f8f8;
+  min-height: 0; /* flexboxでのスクロール有効化 */
+  overflow: hidden; /* 子要素のスクロールを制御 */
+  height: 100%; /* 親の高さを継承 */
 }
 
 .app.dark .chapter-section {
-  background-color: #2b2b2b;
-  border-left-color: #555;
+  background-color: #2a2a2a;
+  border-left-color: #505050;
 }
 
 /* チャプターテーブル */
 .chapter-table {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1; /* 利用可能な空間を全て使用 */
+  display: flex;
+  flex-direction: column;
   background-color: white;
-  border: 1px solid #ccc;
+  border: 1px solid #d0d0d0;
   margin-bottom: 10px;
   font-size: 18px;
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 200px; /* 最小高さを確保 */
 }
 
 .app.dark .chapter-table {
   background-color: #1e1e1e;
-  border-color: #555;
+  border-color: #505050;
+}
+
+.chapter-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0; /* flexboxでのスクロール有効化 */
+  height: 100%; /* 親要素の高さを継承 */
+  position: relative; /* スクロール位置の基準 */
 }
 
 .chapter-table table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed; /* テーブル幅を固定 */
 }
 
 .chapter-table th {
   text-align: left;
-  padding: 10px;
-  background-color: #f0f0f0;
-  border-bottom: 1px solid #ccc;
+  padding: 12px 10px;
+  background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
+  border-bottom: 1px solid #d0d0d0;
   position: sticky;
   top: 0;
   font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  z-index: 10; /* ヘッダーを上に表示 */
 }
 
 .app.dark .chapter-table th {
-  background-color: #353535;
-  border-bottom-color: #555;
+  background: linear-gradient(to bottom, #3a3a3a, #2a2a2a);
+  border-bottom-color: #505050;
+  color: #e0e0e0;
 }
 
 .chapter-table td {
   padding: 6px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
   user-select: none; /* テキスト選択を防止 */
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
+  transition: background-color 0.15s ease;
 }
 
 .app.dark .chapter-table td {
-  border-bottom-color: #444;
+  border-bottom-color: #383838;
 }
 
 .chapter-table tr:hover {
@@ -210,24 +502,47 @@ video {
 }
 
 .app.dark .chapter-table tr:hover {
-  background-color: #353535;
+  background-color: #333333;
 }
 
-.chapter-table tr.selected {
-  background-color: #3875d7;
+/* 選択された行のホバー時の色（単一選択・複数選択共通） */
+.chapter-table tr.selected:hover,
+.chapter-table tr.multi-selected:hover {
+  background-color: #1E90FF; /* より明るい青でコントラストを改善 */
   color: white;
 }
 
-/* 複数選択された行 */
+.app.dark .chapter-table tr.selected:hover,
+.app.dark .chapter-table tr.multi-selected:hover {
+  background-color: #40A9FF; /* ダークモードでは少し明るめの青 */
+  color: white;
+}
+
+.chapter-table tr.selected {
+  background-color: #007AFF;
+  color: white;
+}
+
+.app.dark .chapter-table tr.selected {
+  background-color: #0A84FF;
+  color: white;
+}
+
+/* 複数選択された行も同じ色に統一 */
 .chapter-table tr.multi-selected {
-  background-color: #5890f7;
+  background-color: #007AFF;
+  color: white;
+}
+
+.app.dark .chapter-table tr.multi-selected {
+  background-color: #0A84FF;
   color: white;
 }
 
 /* セルの内容 */
 .cell-content {
-  padding: 4px 6px;
-  min-height: 28px;
+  padding: 6px 8px;
+  min-height: 32px;
   display: flex;
   align-items: center;
   user-select: none; /* テキスト選択を防止 */
@@ -238,19 +553,20 @@ video {
 
 .chapter-table input {
   width: 100%;
-  padding: 4px 6px;
-  border: 1px solid #3875d7;
+  padding: 6px 8px;
+  border: 2px solid #007AFF;
   background: white;
   color: black;
-  font-size: 18px;
+  font-size: 16px;
   font-family: inherit;
   outline: none;
+  border-radius: 4px;
 }
 
 .app.dark .chapter-table input {
-  background: #353535;
+  background: #333333;
   color: white;
-  border-color: #3875d7;
+  border-color: #0A84FF;
 }
 
 /* Time列の幅 */
@@ -262,91 +578,247 @@ video {
 /* チャプターコントロール */
 .chapter-controls {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 8px;
   margin-bottom: 10px;
+  flex-shrink: 0; /* 縮小を防ぐ */
+  margin-top: auto; /* 自動的に下に配置（念のため） */
 }
 
 .chapter-controls button {
-  height: 50px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  background-color: #e4d2d8;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid #d0d0d0;
+  background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
   cursor: pointer;
   font-size: 18px;
+  font-weight: 500;
+  color: #333;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .app.dark .chapter-controls button {
-  background-color: #44617b;
-  color: white;
-  border-color: #555;
+  background: linear-gradient(to bottom, #4a4a4a, #3a3a3a);
+  color: #e0e0e0;
+  border-color: #505050;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .chapter-controls button:hover {
-  background-color: #c4a3bf;
+  background: linear-gradient(to bottom, #e8e8e8, #d8d8d8);
+  border-color: #a0a0a0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .app.dark .chapter-controls button:hover {
-  background-color: #895b8a;
+  background: linear-gradient(to bottom, #5a5a5a, #4a4a4a);
+  border-color: #606060;
+}
+
+.chapter-controls button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* COPY ボタンの特別なスタイル（上段中央） */
+.chapter-controls button:nth-child(2) {
+  background: linear-gradient(to bottom, #5AC8FA, #007AFF);
+  color: white;
+  border-color: #007AFF;
+}
+
+.app.dark .chapter-controls button:nth-child(2) {
+  background: linear-gradient(to bottom, #64D2FF, #0A84FF);
+  border-color: #0A84FF;
+}
+
+.chapter-controls button:nth-child(2):hover {
+  background: linear-gradient(to bottom, #007AFF, #0051D5);
+}
+
+.app.dark .chapter-controls button:nth-child(2):hover {
+  background: linear-gradient(to bottom, #0A84FF, #0066CC);
 }
 
 /* 情報表示 */
 .info {
   text-align: center;
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
+  padding: 6px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+  flex-shrink: 0; /* 縮小を防ぐ */
+  min-height: 24px; /* 最小高さを確保 */
 }
 
 .app.dark .info {
   color: #aaa;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 /* ステータスバー */
 .status-bar {
   display: flex;
   justify-content: flex-end;
-  padding: 8px 20px;
-  border-top: 1px solid #ccc;
-  background-color: #f0f0f0;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  font-size: 20px;
+  padding: 6px 16px;
+  border-top: 1px solid #d0d0d0;
+  background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-size: 18px;
+  color: #555;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-height: 32px;
+  align-items: center;
 }
 
 .app.dark .status-bar {
-  background-color: #353535;
-  border-top-color: #555;
+  background: linear-gradient(to bottom, #3a3a3a, #2a2a2a);
+  border-top-color: #505050;
+  color: #ccc;
 }
 
 /* スクロールバー */
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f0f0f0;
-  border: 1px solid #ccc;
+  border-radius: 7px;
 }
 
 .app.dark ::-webkit-scrollbar-track {
-  background: #2b2b2b;
-  border-color: #555;
+  background: #2a2a2a;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c0c0c0;
-  border: 1px solid #999;
+  background: linear-gradient(to bottom, #c8c8c8, #a8a8a8);
+  border-radius: 7px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 .app.dark ::-webkit-scrollbar-thumb {
-  background: #555;
-  border-color: #666;
+  background: linear-gradient(to bottom, #555, #444);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #999;
+  background: linear-gradient(to bottom, #a8a8a8, #888);
 }
 
 .app.dark ::-webkit-scrollbar-thumb:hover {
-  background: #666;
+  background: linear-gradient(to bottom, #666, #555);
+}
+
+/* チャプターテーブル専用のスクロールバー */
+.chapter-table-wrapper {
+  scrollbar-width: thin;
+  scrollbar-color: #c0c0c0 #f0f0f0;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain; /* スクロールの境界動作を制御 */
+  -webkit-overflow-scrolling: touch; /* iOS Safari でのスムーズスクロール */
+}
+
+.app.dark .chapter-table-wrapper {
+  scrollbar-color: #555 #2a2a2a;
+}
+
+.chapter-table-wrapper::-webkit-scrollbar {
+  width: 12px;
+}
+
+.chapter-table-wrapper::-webkit-scrollbar-track {
+  background: #f8f8f8;
+  border-radius: 6px;
+  margin: 4px;
+}
+
+.app.dark .chapter-table-wrapper::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.chapter-table-wrapper::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #d0d0d0, #b0b0b0);
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
+
+.app.dark .chapter-table-wrapper::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #555, #444);
+}
+
+.chapter-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #b0b0b0, #909090);
+}
+
+.app.dark .chapter-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #666, #555);
+}
+
+/* スクロール時のスムーズなアニメーション */
+.chapter-table-wrapper {
+  scroll-behavior: smooth;
+}
+
+/* テーブル行の背景が透明にならないようにする（スクロール時） */
+.chapter-table tbody tr {
+  background-color: inherit;
+}
+
+.chapter-table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+.app.dark .chapter-table tbody tr:hover {
+  background-color: #333333;
+}
+
+/* マウスホイール対応の追加スタイル */
+.chapter-table table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* テーブル幅を固定 */
+  pointer-events: auto; /* マウスイベントを確実に受け取る */
+}
+
+.chapter-table td,
+.chapter-table th {
+  pointer-events: auto; /* セルでのマウスイベントを有効 */
+}
+
+/* テーブル全体でのマウスホイール有効化 */
+.chapter-table-wrapper * {
+  touch-action: auto; /* タッチデバイスでのスクロール有効化 */
+}
+
+/* アクセシビリティの改善 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* レスポンシブデザイン対応 */
+@media (max-width: 768px) {
+  .chapter-section {
+    width: 300px;
+  }
+  
+  .chapter-controls {
+    grid-template-columns: 1fr;
+  }
+  
+  .menu-bar button {
+    font-size: 13px;
+    padding: 4px 12px;
+  }
 }
